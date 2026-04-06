@@ -1,0 +1,2 @@
+*.o
+IMU_components/IMU_with_udp_client
