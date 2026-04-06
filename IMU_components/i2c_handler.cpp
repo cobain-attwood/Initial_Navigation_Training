@@ -29,8 +29,8 @@ int i2c_handler::open_bus()
 
 /**
  * @brief Reads from i2c bus. 
- * @param buffer - pointer to the buffer read data will be stored in
- * @param length - number of bytes to be read
+ * @param buffer pointer to the buffer read data will be stored in
+ * @param length number of bytes to be read
  */
 void i2c_handler::read_i2c_bus(unsigned char* buffer, int length)
 {
@@ -46,8 +46,8 @@ void i2c_handler::read_i2c_bus(unsigned char* buffer, int length)
 
 /**
  * @brief Writes to i2c bus. 
- * //TODO - update comments
- * 
+ * @param buffer pointer to the buffer data will be written to
+ * @param length number of bytes to be written
  */
 void i2c_handler::write_i2c_bus(unsigned char* buffer, int length)
 {
@@ -63,7 +63,7 @@ void i2c_handler::write_i2c_bus(unsigned char* buffer, int length)
 
 /**
  * @brief Returns file handler
- * @return file_i2c - i2c file handler
+ * @return file_i2c 
  */
 int i2c_handler::get_file_i2c()
 {

@@ -1,4 +1,4 @@
-//i2c handler
+//custom i2c handler
 #include "i2c_handler.h"
 
 //custom UDP client handler
@@ -37,6 +37,11 @@
 #define Y_AXIS_REG 0x2A
 #define Z_AXIS_REG 0x2C
 
+/**
+ * @brief takes a two byte buffer containing a value and transfers it to a 16 bit variable 
+ * @param buffer pointer to the buffer containing two byte value
+ * @return single 16 bbit value
+ */
 int16_t process_16_bit_register_content(unsigned char* buffer)
 {
 	int16_t value = 0;
@@ -67,7 +72,10 @@ int16_t get_data_amount(i2c_handler i2c)
 	return both_bytes;
 }
 
-
+/**
+ * @brief sets up the IMU by setting control registers with the desired values (hardcoded) 
+ * @param i2c i2c handler class to allow for sending data to IMU
+ */
 void setup_IMU(i2c_handler i2c)
 {
 	uint8_t buffer[2] = {0};
@@ -110,8 +118,11 @@ void read_status_register(i2c_handler i2c)
 	std::cout << "STATUS_REG read: " << std::hex << (int)result_buffer[0] << std::dec << std::endl;
 }
 
-//process data into human readable accleration
-//turn raw accleration data in mG to m/s^2
+/**
+ * @brief turn raw accleration data from milli-G to m/s^2 to make it more human readable
+ * @param raw_data unprocessed data in milli-Gs
+ * @return acceleration data in m/s^2
+ */
 float process_accleration_data(int16_t raw_data)
 {
 	//gives us acceleration in milli-G
@@ -126,6 +137,11 @@ float process_accleration_data(int16_t raw_data)
 	return processed_data;
 }
 
+/**
+ * @brief turns micro-seconds into seconds 
+ * @param time_us time in micro-seconds
+ * @return time in seconds
+ */
 float micro_to_sec(double time_us)
 {
 	return time_us / 1000000;
@@ -184,16 +200,34 @@ float calculate_angle_change(float angular_velocity, double time)
 	return (angular_velocity * time);
 }
 
+/**
+ * @brief turns value in milli degrees per second into degrees per seconds 
+ * @param mdps milli degrees per second
+ * @return degrees per seconds
+ */
 float milli_dps_to_dps(float mdps)
 {
 	return mdps / 1000;
 }
 
+/**
+ * @brief turns value in degrees into radians
+ * @param degrees value in degrees
+ * @return value in radians
+ */
 float degrees_to_radians(float degrees)
 {
 	return degrees * (M_PI / 180);
 }
 
+/**
+ * @brief Calculates the acceleration due to gravity in each axis based on the orientation of the IMU. Results can be taken off acceleration data
+ * to neutralise gravity from acceleromoter readings.
+ * @param roll angle in in the roll axis
+ * @param pitch angle in in the pitch axis
+ * @param yaw  angle in in the yaw axis
+ * @return a vector containing three offset values, one for each axis
+ */
 std::vector<float> calculate_gravity_offset(float roll, float pitch, float yaw)
 {
 	std::vector<float> gravity_offset;
