@@ -709,7 +709,7 @@ int main()
 			yaw_angular_velocity = get_angle(y_angle_data, &yaw_angle);
 
 			//print outs of angle data
-			std::cout << "\x1B[2K" << std::setprecision(3) << "sample sizes:" << std::endl;
+			/*std::cout << "\x1B[2K" << std::setprecision(3) << "sample sizes:" << std::endl;
 			std::cout << "\x1B[2K" << "p_angle_data: " << p_angle_data.size() << std::endl;
 			std::cout << "\x1B[2K" << "r_angle_data: " << r_angle_data.size() << std::endl;
 			std::cout << "\x1B[2K" << "y_angle_data: " << y_angle_data.size() << std::endl;
@@ -726,8 +726,7 @@ int main()
 			std::cout << "\x1B[2K" << "Roll: " << roll_angle << " degrees" << std::endl;
 			std::cout << "\x1B[2K" << "Yaw: " << yaw_angle << " degrees" << std::endl;
 
-
-			std::cout << "\x1B[12A" << std::flush;  //xA to go back x lines
+			std::cout << "\x1B[12A" << std::flush;  //xA to go back x lines*/
 
 			//clear angle data ready for next set of samples
 			p_angle_data.clear();
@@ -739,21 +738,21 @@ int main()
 
 
 			//get gravity offsets
-			//std::vector<float> offsets = calculate_gravity_offset(roll_angle, pitch_angle, yaw_angle);
+			std::vector<float> offsets = calculate_gravity_offset(roll_angle, pitch_angle, yaw_angle);
 			
 			//process acceleration
-			//float x_avg_acceleration = filter_acceleration(x_acceleration_data, offsets[0]);
-			//float y_avg_acceleration = filter_acceleration(y_acceleration_data, offsets[1]);
-			//float z_avg_acceleration = filter_acceleration(y_acceleration_data, offsets[2]);
+			float x_avg_acceleration = filter_acceleration(x_acceleration_data, offsets[0]);
+			float y_avg_acceleration = filter_acceleration(y_acceleration_data, offsets[1]);
+			float z_avg_acceleration = filter_acceleration(y_acceleration_data, offsets[2]);
 			
 			//clear acceleration data ready for next set of samples
-			//x_acceleration_data.clear();
-			//y_acceleration_data.clear();
-			//z_acceleration_data.clear();
+			x_acceleration_data.clear();
+			y_acceleration_data.clear();
+			z_acceleration_data.clear();
 			
 			
 			//output for analysis
-			/*auto current_time = std::chrono::high_resolution_clock::now();
+			auto current_time = std::chrono::high_resolution_clock::now();
 			std::cout << "Program has been running for: " << std::chrono::duration_cast<std::chrono::seconds>(current_time - start_time).count() << " seconds" << std::endl;
 
 			//printing out calculated gravity offsets
@@ -774,7 +773,7 @@ int main()
 			std::cout << "\x1B[2K" << "Roll: " << roll_angle << " degrees" << std::endl;
 			std::cout << "\x1B[2K" << "Yaw: " << yaw_angle << " degrees" << std::endl;
 			
-			std::cout << "\x1B[13A" << std::flush;  //xA to go back x lines*/
+			std::cout << "\x1B[13A" << std::flush;  //xA to go back x lines
 			
 			
 			/*
