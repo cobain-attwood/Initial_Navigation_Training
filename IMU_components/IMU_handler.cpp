@@ -25,7 +25,7 @@
 #define ANGL_SENSITIVITY 8.75 //not garunteed to be correct - go through calibration if needed 
 
 //time interval
-#define SAMPLING_INTERVAL 0.01 //in seconds
+#define SAMPLING_INTERVAL 1 //in seconds
 #define SCALING 100 // dependent on SAMPLING_INTERVAL
 
 //IMU register addresses
@@ -161,16 +161,17 @@ float determine_distance_traveled(float velocity, double time)
 	return velocity * time;
 }
 
-//data filtered and averaged using interquartile range
+/**
+ * @brief Filters a set of data by extracting the va;ues within the interquartile range and averaging them. Data
+ * needs to be sorted smallest to largest before being passed to this function.
+ * @param sample_range vector of data from a given axis to be filtered
+ * @return the mean average of the data given
+ */
 float filter_and_calculate_mean_average(std::vector<float> sample_range)
 {
 	int UQ = ((3 * (sample_range.size() + 1)) / 4); //formula for upper quartile 
 	int LQ = ((sample_range.size() + 1) / 4); //formula for lower quartile 
 	//int IQR = UQ - LQ; //kept for reference
-	
-	//std::cout << "Sample size: " << sample_range.size() << std::endl;
-	//std::cout << "Upper quarterile: " << UQ << std::endl;
-	//std::cout << "Lower quarterile: " << LQ << std::endl;
 	
 	float mean_average = 0;
 	
@@ -180,24 +181,14 @@ float filter_and_calculate_mean_average(std::vector<float> sample_range)
 	{
 		if(i == sample_range.size())
 		{
-			//stop program aborting
+			//stops program aborting
 			break;
 		}
-		//the data being already sorted at this stage is an assumption
 		mean_average += sample_range.at(i); /// SCALING);
 		sample_size++;
 	}
 	
-	mean_average = mean_average / sample_size;
-	//std::cout << "Mean average: " << mean_average << std::endl;
-	//std::cout << "\x1B[4A" << std::flush;  //xA to go back
-	return mean_average; // / sample_size;
-}
-
-//angular velocity in dps and time in seconds
-float calculate_angle_change(float angular_velocity, double time)
-{
-	return (angular_velocity * time);
+	return mean_average / sample_size;
 }
 
 /**
@@ -281,17 +272,18 @@ int16_t read_accelerometer(int address, i2c_handler handler)
 	return process_16_bit_register_content(result_buffer);
 }
 
-//get the angle of the IMU in a cetain axis from raw data
-void get_angle(std::vector<float> angle_data, float* angle)
+/**
+ * @brief uses collected angular velcoity data to update the predicted angle of a given axis
+ * @param angle_data all anglar velocity from one axis collected during a time interval 
+ * @param angle pointer to the appropriate angle variable, keeping track of the overall predicted angle
+ */
+float get_angle(std::vector<float> angle_data, float* angle)
 {
 	//filter the data using it's interquartile range to remove noise
 	std::sort(angle_data.begin(), angle_data.end());
 	float average_anglur_velocity = filter_and_calculate_mean_average(angle_data); //angular velocity in dps
-	//std::cout << "average_anglur_velocity: " << average_anglur_velocity << std::endl;
-
-	*angle += calculate_angle_change(average_anglur_velocity, SAMPLING_INTERVAL);
 	
-	*angle += average_anglur_velocity;
+	*angle += (average_anglur_velocity * SAMPLING_INTERVAL);
 	
 	if(*angle >= 360)
 	{
@@ -300,6 +292,7 @@ void get_angle(std::vector<float> angle_data, float* angle)
 	{
 		*angle += 360;
 	}
+	return average_anglur_velocity; //for debugging remove once not needed
 }
 
 float filter_acceleration(std::vector<float> acceleration_data, float offset)
@@ -701,52 +694,87 @@ int main()
 			
 			//process angles
 			//PITCH
-			get_angle(p_angle_data, &pitch_angle);
+
+			//for debugging - remove when not needed
+			float pitch_angular_velocity = 0;
+			float roll_angular_velocity = 0;
+			float yaw_angular_velocity = 0;
+
+			pitch_angular_velocity = get_angle(p_angle_data, &pitch_angle);
 
 			//ROLL
-			get_angle(r_angle_data, &roll_angle);
+			roll_angular_velocity = get_angle(r_angle_data, &roll_angle);
 			
 			//YAW
-			get_angle(y_angle_data, &yaw_angle);
+			yaw_angular_velocity = get_angle(y_angle_data, &yaw_angle);
+
+			//print outs of angle data
+			std::cout << "\x1B[2K" << std::setprecision(3) << "sample sizes:" << std::endl;
+			std::cout << "\x1B[2K" << "p_angle_data: " << p_angle_data.size() << std::endl;
+			std::cout << "\x1B[2K" << "r_angle_data: " << r_angle_data.size() << std::endl;
+			std::cout << "\x1B[2K" << "y_angle_data: " << y_angle_data.size() << std::endl;
+
+			//average angular velocities
+			std::cout << "\x1B[2K" << std::setprecision(3) << "average angular velocities:" << std::endl;
+			std::cout << "\x1B[2K" << "pitch: " << pitch_angular_velocity << std::endl;
+			std::cout << "\x1B[2K" << "roll: " << roll_angular_velocity << std::endl;
+			std::cout << "\x1B[2K" << "yaw: " << yaw_angular_velocity << std::endl;
+
+			//printing out gyro data afrer processing
+			std::cout << "\x1B[2K" << std::setprecision(3) << "orientation:" << std::endl;
+			std::cout << "\x1B[2K" << "Pitch: " << pitch_angle << " degrees" << std::endl;
+			std::cout << "\x1B[2K" << "Roll: " << roll_angle << " degrees" << std::endl;
+			std::cout << "\x1B[2K" << "Yaw: " << yaw_angle << " degrees" << std::endl;
+
+
+			std::cout << "\x1B[12A" << std::flush;  //xA to go back x lines
 
 			//clear angle data ready for next set of samples
 			p_angle_data.clear();
 			r_angle_data.clear();
 			y_angle_data.clear();
-			
+
+
+
+
+
 			//get gravity offsets
-			std::vector<float> offsets = calculate_gravity_offset(roll_angle, pitch_angle, yaw_angle);
+			//std::vector<float> offsets = calculate_gravity_offset(roll_angle, pitch_angle, yaw_angle);
 			
-			std::cout << "\x1B[2K" << "X offset: " << offsets[0] << std::endl;
-			std::cout << "\x1B[2K" << "Y offset: " << offsets[1] << std::endl;
-			std::cout << "\x1B[2K" << "Z offset: " << offsets[2] << std::endl;
-		
 			//process acceleration
-			float x_avg_acceleration = filter_acceleration(x_acceleration_data, offsets[0]);
-			float y_avg_acceleration = filter_acceleration(y_acceleration_data, offsets[1]);
-			float z_avg_acceleration = filter_acceleration(y_acceleration_data, offsets[2]);
+			//float x_avg_acceleration = filter_acceleration(x_acceleration_data, offsets[0]);
+			//float y_avg_acceleration = filter_acceleration(y_acceleration_data, offsets[1]);
+			//float z_avg_acceleration = filter_acceleration(y_acceleration_data, offsets[2]);
 			
 			//clear acceleration data ready for next set of samples
-			x_acceleration_data.clear();
-			y_acceleration_data.clear();
-			z_acceleration_data.clear();
+			//x_acceleration_data.clear();
+			//y_acceleration_data.clear();
+			//z_acceleration_data.clear();
 			
 			
 			//output for analysis
-			auto current_time = std::chrono::high_resolution_clock::now();
-			
+			/*auto current_time = std::chrono::high_resolution_clock::now();
+			std::cout << "Program has been running for: " << std::chrono::duration_cast<std::chrono::seconds>(current_time - start_time).count() << " seconds" << std::endl;
+
+			//printing out calculated gravity offsets
+			std::cout << "\x1B[2K" << std::setprecision(3) << "Gravity offsets:" << std::endl;
+			std::cout << "\x1B[2K" << "X offset: " << offsets[0] << std::endl;
+			std::cout << "\x1B[2K" << "Y offset: " << offsets[1] << std::endl;
+			std::cout << "\x1B[2K" << "Z offset: " << offsets[2] << std::endl;
+
+			//printing out acceleration values after processing
 			std::cout << "\x1B[2K" << std::setprecision(3) << "Acceleration:" << std::endl;
 			std::cout << "\x1B[2K" << "X axis: " << x_avg_acceleration << " m/s^2" << std::endl;
 			std::cout << "\x1B[2K" << "Y axis: " << y_avg_acceleration << " m/s^2" << std::endl;
 			std::cout << "\x1B[2K" << "Z axis: " << z_avg_acceleration << " m/s^2" << std::endl;
 		
-			std::cout << "Program has been running for: " << std::chrono::duration_cast<std::chrono::seconds>(current_time - start_time).count() << " seconds" << std::endl;
+			//printing out gyro data afrer processing
 			std::cout << "\x1B[2K" << std::setprecision(3) << "orientation:" << std::endl;
 			std::cout << "\x1B[2K" << "Pitch: " << pitch_angle << " degrees" << std::endl;
 			std::cout << "\x1B[2K" << "Roll: " << roll_angle << " degrees" << std::endl;
 			std::cout << "\x1B[2K" << "Yaw: " << yaw_angle << " degrees" << std::endl;
 			
-			std::cout << "\x1B[12A" << std::flush;  //xA to go back x lines
+			std::cout << "\x1B[13A" << std::flush;  //xA to go back x lines*/
 			
 			
 			/*
