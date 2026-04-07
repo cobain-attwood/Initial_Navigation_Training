@@ -25,7 +25,7 @@
 #define ANGL_SENSITIVITY 8.75 //not garunteed to be correct - go through calibration if needed 
 
 //time interval
-#define SAMPLING_INTERVAL 1 //in seconds
+#define SAMPLING_INTERVAL 0.01 //in seconds
 #define SCALING 100 // dependent on SAMPLING_INTERVAL
 
 //IMU register addresses
@@ -295,14 +295,19 @@ float get_angle(std::vector<float> angle_data, float* angle)
 	return average_anglur_velocity; //for debugging remove once not needed
 }
 
+/**
+ * @brief removes the effects of gravity from acceleration data before sending the data to be further filtered
+ * by filter_and_calculate_mean_average
+ * @param acceleration_data the acceleration data for a given axis
+ * @param offset the gravity offset for the axis the acceleration data coresponds with 
+ * @return fully filtered acceleration data for a given axis
+ */
 float filter_acceleration(std::vector<float> acceleration_data, float offset)
 {
 	std::sort(acceleration_data.begin(), acceleration_data.end());
-	for(int i = 0; i < acceleration_data.size() ;i++)
-	{
-		acceleration_data[i] -= offset; //removing the affects of gravity
-	}
-	return filter_and_calculate_mean_average(acceleration_data);	
+	float filtered_acceleration = filter_and_calculate_mean_average(acceleration_data);
+	filtered_acceleration -= offset;
+	return filtered_acceleration;
 }
 
 float process_angle_data(uint8_t buffer[2])
@@ -328,11 +333,11 @@ int main()
 	i2c_handler i2c("/dev/i2c-1", 0x6b);
 	
 	//set up UDP server
-	UDP_client client;
+	/*UDP_client client;
 	if(client.client_setup() != 0)
 	{
 		return -1;
-	}
+	}*/
 	
 	//open the i2c bus
 	if(i2c.open_bus() != 0)
