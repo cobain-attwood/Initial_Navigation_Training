@@ -296,7 +296,7 @@ float get_angle(std::vector<float> angle_data, float* angle)
 }
 
 /**
- * @brief removes the effects of gravity from acceleration data before sending the data to be further filtered
+ * @brief removes the effects of gravity from acceleration data after sending the data to be filtered
  * by filter_and_calculate_mean_average
  * @param acceleration_data the acceleration data for a given axis
  * @param offset the gravity offset for the axis the acceleration data coresponds with 
