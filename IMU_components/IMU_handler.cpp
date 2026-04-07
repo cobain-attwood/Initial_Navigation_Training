@@ -310,6 +310,11 @@ float filter_acceleration(std::vector<float> acceleration_data, float offset)
 	return filtered_acceleration;
 }
 
+/**
+ * @brief turns raw angle data into human readable data in DPS
+ * @param buffer a single point of raw angle data from the IMU 
+ * @return human readable angle
+ */
 float process_angle_data(uint8_t buffer[2])
 {
 	int16_t value = process_16_bit_register_content(buffer);
@@ -748,7 +753,7 @@ int main()
 			//process acceleration
 			float x_avg_acceleration = filter_acceleration(x_acceleration_data, offsets[0]);
 			float y_avg_acceleration = filter_acceleration(y_acceleration_data, offsets[1]);
-			float z_avg_acceleration = filter_acceleration(y_acceleration_data, offsets[2]);
+			float z_avg_acceleration = filter_acceleration(z_acceleration_data, offsets[2]);
 			
 			//clear acceleration data ready for next set of samples
 			x_acceleration_data.clear();
